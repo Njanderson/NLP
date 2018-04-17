@@ -23,7 +23,7 @@ data = args.data if args.data is not None else 'data'
 seed = args.seed
 
 models = {
-    'n': ngram.Ngram(seed),
+    'n': ngram.Ngram(5, int(seed), smoothing=0.01),
     'c': cnn.Cnn()
 }
 model = models[args.model]

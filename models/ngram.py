@@ -26,7 +26,7 @@ class Ngram(Model):
         # The smoothing factor added to each character
         self.smoothing = smoothing
         # Use the same rand_state for every distribution
-        self.rand_state = np.random.RandomState(seed)
+        np.random.seed(seed)
 
     """
     Given a map of history to next character counts, construct a
@@ -50,15 +50,18 @@ class Ngram(Model):
         total_count = 0
         # Add smoothing such that we have a valid probability distribution
         for c in self.language:
+            if c not in ngram_counts:
+                ngram_counts[c] = 0
             ngram_counts[c] += self.smoothing
             total_count += ngram_counts[c]
 
-        # Store chars as drawing from our distribution will give us indexes into this list
-        self.chars = ngram_counts.keys()
-        self.probabilities = [c / total_count for c in self.chars]
+        # Store chars and their probabilities
+        self.chars = list(ngram_counts.keys())
+        self.probabilities = [ngram_counts[c] / total_count for c in self.chars]
 
-        # The rv_discrete distribution requires integers as keys, so we use indices into our self.chars list
-        self.distrib = rv_discrete(values=(range(len(self.chars)), self.probabilities), seed=self.rand_state)
+        # See most likely probability values
+        # print(sorted(self.probabilities, reverse=True)[:10])
+
         logger.info('Created new distribution')
 
     """Train the model. Accepts data, a list of sentences to train on"""
@@ -81,7 +84,7 @@ class Ngram(Model):
             history = ''
             for c in sample:
                 # If history is too long, truncate it
-                if history > self.n:
+                if len(history) > self.n:
                     history = history[1:]
 
                 curr = history
@@ -106,8 +109,8 @@ class Ngram(Model):
     """Generate a character the model"""
     def generate(self):
         # Sample from our distribution and index into our characters
-        sampled = self.chars[self.distrib.rvs(1)]
-        print(sampled + ' generated. ', end='')
+        sampled = np.random.choice(self.chars, p=self.probabilities)
+        print(sampled + ' generated (probability=%f). ' % (self.probabilities[self.chars.index(sampled)],), end='')
         self.observe(sampled)
 
     """Observe character "observed" and update history"""
