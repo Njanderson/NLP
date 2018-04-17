@@ -1,5 +1,4 @@
 from models.model import Model
-from scipy.stats import rv_discrete
 import numpy as np
 from math import log
 from logging import Logger, getLogger, INFO
@@ -116,7 +115,10 @@ class Ngram(Model):
     """Observe character "observed" and update history"""
     def observe(self, observed):
         print('Observed: ' + observed)
-        self.history += observed
+        if observed == chr(3):
+            self.history = ''
+        else:
+            self.history += observed
         self._create_dist()
 
     """Query the model for character "queried" """
