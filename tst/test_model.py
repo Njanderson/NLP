@@ -1,5 +1,6 @@
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath('..'))
 import unittest
 import utils
@@ -20,22 +21,7 @@ TEST_CMD_DIR = os.path.join('resources', 'cmd')
 NUM_THREADS = 8
 
 
-def compute_range(args):
-    chars, probabilities, lang, start, end_exclusive = args
-    p = 0.0
-    for i in range(start, end_exclusive):
-        p += probabilities[chars.index(lang[i])]
-    return p
-
 class TestModels(unittest.TestCase):
-
-    """Verifies probability sums to 1"""
-    def probability_helper(self, model):
-        lang = utils.loader.get_language()
-        self.lang = lang
-        self.model = model
-        with Pool(NUM_THREADS) as p:
-            return sum(p.map(compute_range, [(model.chars, model.probabilities, lang, floor(len(lang)*i/8), floor(len(lang)*(i+1)/8)) for i in range(0, NUM_THREADS)]))
 
     def output_helper(self, expected, found):
         # Make sure our output has the same length as the reference output
@@ -48,13 +34,16 @@ class TestModels(unittest.TestCase):
                 self.assertTrue(match('-?[0-9]', found_split[i]))
 
     """Evaluates on assignment 1 test input"""
+
     def basic_helper(self, model, out):
+        lang = utils.loader.get_language()
         with io.open(os.path.join(TEST_CMD_DIR, 'basic_input'), 'r', encoding='utf-8') as fd:
             # Perform a command from the file stream
             while do_cmd(model, fd):
                 print('Verifying probability distribution...')
-		# After performing a command, check the probability
-                self.assertTrue(isclose(1.0, self.probability_helper(model), abs_tol=TOLERANCE))
+                # After performing a command, check the probability
+                self.assertAlmostEqual(sum(model.probabilities), 1.0)
+                self.assertTrue(all(c in model.chars for c in lang))
                 print('PMF was valid')
         with io.open(os.path.join(TEST_CMD_DIR, 'basic_output'), 'r') as fd:
             expected = fd.read()
@@ -63,6 +52,7 @@ class TestModels(unittest.TestCase):
         self.output_helper(expected, found)
 
     """Evaluates whether a stop character is eventually produced"""
+
     def termination_helper(self, model):
         # Generate a single character
         # Note: we loop here such that if we generate a ^C as our first character,
@@ -84,6 +74,7 @@ class TestModels(unittest.TestCase):
         model = Ngram(5, seed=int(SEED), smoothing=0.01)
         model.train(utils.loader.get_language(), utils.loader.load_all(TEST_DATA_DIR))
         self.termination_helper(model)
+
 
 if __name__ == '__main__':
     unittest.main()
