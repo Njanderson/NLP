@@ -8,11 +8,11 @@ class Model(object):
     def generate(self):
         raise NotImplementedError()
 
-    """Observe character "observed" and update history"""
+    """Observe character "observed" and update history, returns the log probability of that character"""
     def observe(self, observed):
         raise NotImplementedError()
 
-    """Query the model for character "queried" """
+    """Query the model for character "queried," prints and returns the log probability"""
     def query(self, queried):
         raise NotImplementedError()
 

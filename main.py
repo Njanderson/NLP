@@ -15,31 +15,38 @@ parser.add_argument("-d", "--data", dest="data",
 parser.add_argument("-s", "--seed", dest="seed",
                     help="The random seed to be used")
 
-args = parser.parse_args()
-
-
-# Default to data directory
-data = args.data if args.data is not None else 'data'
-seed = args.seed
-
-models = {
-    'n': ngram.Ngram(5, int(seed), smoothing=0.01),
-    'c': cnn.Cnn()
-}
-model = models[args.model]
-
-if __name__ == '__main__':
-    model.train(loader.get_language(), loader.load_all(data))
-    while True:
-        cmd = stdin.read(1)
+# Pass in stream such that we can support stdin or file interfaces
+def do_cmd(model, stream):
+    try:
+        # Read 1 character at a time
+        cmd = stream.read(1)
         if cmd == 'o':
-            model.observe(stdin.read(1))
+            model.observe(stream.read(1))
         elif cmd == 'g':
             model.generate()
         elif cmd == 'q':
-            model.query(stdin.read(1))
+            model.query(stream.read(1))
         elif cmd == 'x':
-            exit(0)
+            return
         else:
             # Malformed input
             logger.warn('Malformed command')
+    except:
+        pass
+
+if __name__ == '__main__':
+    args = parser.parse_args()
+
+    # Default to data directory
+    data = args.data if args.data is not None else 'data'
+    seed = args.seed
+
+    models = {
+        'n': ngram.Ngram(5, int(seed), smoothing=0.01),
+        'c': cnn.Cnn()
+    }
+    model = models[args.model]
+
+    model.train(loader.get_language(), loader.load_all(data))
+    while True:
+        do_cmd(model, stdin)

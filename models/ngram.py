@@ -2,13 +2,14 @@ from models.model import Model
 import numpy as np
 from math import log
 from logging import Logger, getLogger, INFO
+import sys
 
 logger = getLogger('Ngram')
 Logger.setLevel(logger, INFO)
 
 class Ngram(Model):
 
-    def __init__(self, n, seed=1, smoothing=1):
+    def __init__(self, n, seed=1, smoothing=1, out=sys.stdout):
         # The counts of all ngrams seem
         self.counts = {}
         # All of the characters in the language
@@ -26,6 +27,8 @@ class Ngram(Model):
         self.smoothing = smoothing
         # Use the same rand_state for every distribution
         np.random.seed(seed)
+        # For testing, collect output
+        self.out = out
 
     """
     Given a map of history to next character counts, construct a
@@ -49,6 +52,7 @@ class Ngram(Model):
         total_count = 0
         # Add smoothing such that we have a valid probability distribution
         for c in self.language:
+            # c = c.decode('utf8')
             if c not in ngram_counts:
                 ngram_counts[c] = 0
             ngram_counts[c] += self.smoothing
@@ -75,7 +79,8 @@ class Ngram(Model):
         for sentence in data:
             # Print progress
             if count % log_freq == 0:
-                print('Trained on %d out of %d samples' % (count, len(data)))
+                # print('Trained on %d out of %d samples' % (count, len(data)))
+                pass
             count += 1
 
             # Add ^C character
@@ -109,22 +114,28 @@ class Ngram(Model):
     def generate(self):
         # Sample from our distribution and index into our characters
         sampled = np.random.choice(self.chars, p=self.probabilities)
-        print(sampled + ' generated (probability=%f). ' % (self.probabilities[self.chars.index(sampled)],), end='')
+        print(sampled + ' generated (probability=%f). ' % (self.probabilities[self.chars.index(sampled)],), end='', file=self.out)
         self.observe(sampled)
 
-    """Observe character "observed" and update history"""
+    """Observe character "observed" and update history, returns the log probability of that character"""
     def observe(self, observed):
-        print('Observed: ' + observed)
+        print('Observed: ' + observed, file=self.out)
         if observed == chr(3):
             self.history = ''
         else:
             self.history += observed
+        p = self.probabilities[self.chars.index(observed)]
+        log_p = log(p) / log(2)
         self._create_dist()
+        return log_p
 
-    """Query the model for character "queried" """
+
+    """Query the model for character "queried," prints and returns the log probability"""
     def query(self, queried):
         p = self.probabilities[self.chars.index(queried)]
-        print("%f" % (log(p) / log(2), ))
+        log_p = log(p) / log(2)
+        print("%f" % (log_p, ), file=self.out)
+        return log_p
 
     """Resets the history of the model"""
     def reset(self):

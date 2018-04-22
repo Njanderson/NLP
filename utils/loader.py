@@ -1,12 +1,14 @@
 import io
 from os import listdir, path
-from utils.const import LANG_SIZE
+from utils.const import LANG_SIZE, LANG_MAX_VALUE
+import numpy as np
 
 def get_language():
     lang = []
-    for i in range(0,  LANG_SIZE):
-        # TODO Are there ranges that should be skipped?
-        lang += [chr(i)]
+    for i in range(LANG_MAX_VALUE):
+        if 0xD800 <= i <= 0xDFFF:
+            continue
+        lang.append(chr(i))
     return lang
 
 def get_samples(path):
