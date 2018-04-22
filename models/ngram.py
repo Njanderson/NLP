@@ -79,7 +79,7 @@ class Ngram(Model):
         for sentence in data:
             # Print progress
             if count % log_freq == 0:
-                # print('Trained on %d out of %d samples' % (count, len(data)))
+                print('Trained on %d out of %d samples' % (count, len(data)))
                 pass
             count += 1
 
@@ -119,7 +119,7 @@ class Ngram(Model):
 
     """Observe character "observed" and update history, returns the log probability of that character"""
     def observe(self, observed):
-        print('Observed: ' + observed, file=self.out)
+        print('Observed: ' + observed.replace('\n', '\\n'), file=self.out)
         if observed == chr(3):
             self.history = ''
         else:
@@ -131,10 +131,11 @@ class Ngram(Model):
 
 
     """Query the model for character "queried," prints and returns the log probability"""
-    def query(self, queried):
+    def query(self, queried, silent=False):
         p = self.probabilities[self.chars.index(queried)]
         log_p = log(p) / log(2)
-        print("%f" % (log_p, ), file=self.out)
+        if not silent:
+            print("%f" % (log_p, ), file=self.out)
         return log_p
 
     """Resets the history of the model"""

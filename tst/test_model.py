@@ -9,6 +9,7 @@ from models.ngram import Ngram
 from math import *
 import tempfile
 from re import *
+from multiprocessing import Pool
 
 # How long do we expect sentences could be?
 MAX_EXPECTED_LENGTH = 100
@@ -16,42 +17,46 @@ TOLERANCE = 1e-5
 SEED = 1
 TEST_DATA_DIR = os.path.join('resources', 'data')
 TEST_CMD_DIR = os.path.join('resources', 'cmd')
+NUM_THREADS = 8
+
+
+def compute_range(args):
+    chars, probabilities, lang, start, end_exclusive = args
+    p = 0.0
+    for i in range(start, end_exclusive):
+        p += probabilities[chars.index(lang[i])]
+    return p
 
 class TestModels(unittest.TestCase):
 
     """Verifies probability sums to 1"""
     def probability_helper(self, model):
-        p = 0.0
-        i = 0
-        log_freq = 10000
         lang = utils.loader.get_language()
-        for c in lang:
-            if i % log_freq == 0:
-                print('Computing probability: %d of %d characters completed...' % (i, len(lang)))
-            i += 1
-            log_p = model.query(c)
-            p += exp(log_p * log(2))
-        return p
+        self.lang = lang
+        self.model = model
+        with Pool(NUM_THREADS) as p:
+            return sum(p.map(compute_range, [(model.chars, model.probabilities, lang, floor(len(lang)*i/8), floor(len(lang)*(i+1)/8)) for i in range(0, NUM_THREADS)]))
 
     def output_helper(self, expected, found):
         # Make sure our output has the same length as the reference output
-        self.assertEquals(expected.count('\n'), found.count('\n'))
+        self.assertEqual(expected.count('\n'), found.count('\n'))
         expected_split = expected.split('\n')
         found_split = found.split('\n')
         # Check to make sure lines that report a number report in our model as well
-        for i in range(0, len(expected.split)):
-            if match('-?[0-9]', expected[i]) is not None:
-                self.assertTrue(match('-?[0-9]', found[i]))
+        for i in range(0, len(expected_split)):
+            if match('-?[0-9]', expected_split[i]) is not None:
+                self.assertTrue(match('-?[0-9]', found_split[i]))
 
     """Evaluates on assignment 1 test input"""
     def basic_helper(self, model, out):
-        with io.open(os.path.join(TEST_CMD_DIR, 'basic_input'), 'r') as fd:
+        with io.open(os.path.join(TEST_CMD_DIR, 'basic_input'), 'r', encoding='utf-8') as fd:
             # Perform a command from the file stream
-            do_cmd(model, fd)
-            # After performing a command, check the probability
-            self.assertTrue(isclose(1.0, self.probability_helper(model), abs_tol=TOLERANCE))
+            while do_cmd(model, fd):
+                # After performing a command, check the probability
+                self.assertTrue(isclose(1.0, self.probability_helper(model), abs_tol=TOLERANCE))
         with io.open(os.path.join(TEST_CMD_DIR, 'basic_output'), 'r') as fd:
             expected = fd.read()
+        out.seek(0)
         found = out.read()
         self.output_helper(expected, found)
 

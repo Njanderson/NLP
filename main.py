@@ -15,7 +15,8 @@ parser.add_argument("-d", "--data", dest="data",
 parser.add_argument("-s", "--seed", dest="seed",
                     help="The random seed to be used")
 
-# Pass in stream such that we can support stdin or file interfaces
+# Pass in stream such that we can support stdin or file interfaces,
+# returns True if execution can continue
 def do_cmd(model, stream):
     try:
         # Read 1 character at a time
@@ -27,12 +28,13 @@ def do_cmd(model, stream):
         elif cmd == 'q':
             model.query(stream.read(1))
         elif cmd == 'x':
-            return
+            return False
         else:
             # Malformed input
-            logger.warn('Malformed command')
+            logger.warning('Malformed command ' + cmd)
     except:
-        pass
+        return False
+    return True
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -48,5 +50,7 @@ if __name__ == '__main__':
     model = models[args.model]
 
     model.train(loader.get_language(), loader.load_all(data))
-    while True:
-        do_cmd(model, stdin)
+
+    while do_cmd(model, stdin):
+        pass
+
