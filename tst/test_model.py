@@ -52,8 +52,10 @@ class TestModels(unittest.TestCase):
         with io.open(os.path.join(TEST_CMD_DIR, 'basic_input'), 'r', encoding='utf-8') as fd:
             # Perform a command from the file stream
             while do_cmd(model, fd):
-                # After performing a command, check the probability
+                print('Verifying probability distribution...')
+		# After performing a command, check the probability
                 self.assertTrue(isclose(1.0, self.probability_helper(model), abs_tol=TOLERANCE))
+                print('PMF was valid')
         with io.open(os.path.join(TEST_CMD_DIR, 'basic_output'), 'r') as fd:
             expected = fd.read()
         out.seek(0)
