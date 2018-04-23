@@ -6,7 +6,6 @@ import utils
 import io
 from main import do_cmd
 from models.ngram import Ngram
-from math import *
 import tempfile
 from re import *
 

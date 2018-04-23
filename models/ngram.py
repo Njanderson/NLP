@@ -47,7 +47,9 @@ class Ngram(Model):
             ngram_history = ngram_history[1:]
 
         # These are the relevant counts
-        ngram_counts = self.counts[ngram_history]
+        # Make a deep copy to prevent running out of memory
+        # by adding smoothing with every iteration
+        ngram_counts = dict(self.counts[ngram_history])
 
         total_count = 0
         # Add smoothing such that we have a valid probability distribution
