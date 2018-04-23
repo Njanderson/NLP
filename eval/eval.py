@@ -1,8 +1,9 @@
 import os
+import sys
+sys.path.insert(0, os.path.abspath('..'))
 from argparse import ArgumentParser
 from utils import loader
 from models import ngram, cnn
-import io
 from tempfile import TemporaryFile
 
 TEST_DATA_DIR = os.path.join('resources', 'test')
