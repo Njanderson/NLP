@@ -1,6 +1,5 @@
 import os
 import sys
-
 sys.path.insert(0, os.path.abspath('..'))
 import unittest
 import utils
@@ -10,16 +9,14 @@ from models.ngram import Ngram
 from math import *
 import tempfile
 from re import *
-from multiprocessing import Pool
 
 # How long do we expect sentences could be?
-MAX_EXPECTED_LENGTH = 100
+MAX_EXPECTED_LENGTH = 500
 TOLERANCE = 1e-5
 SEED = 1
 TEST_DATA_DIR = os.path.join('resources', 'data')
 TEST_CMD_DIR = os.path.join('resources', 'cmd')
 NUM_THREADS = 8
-
 
 class TestModels(unittest.TestCase):
 
@@ -40,11 +37,9 @@ class TestModels(unittest.TestCase):
         with io.open(os.path.join(TEST_CMD_DIR, 'basic_input'), 'r', encoding='utf-8') as fd:
             # Perform a command from the file stream
             while do_cmd(model, fd):
-                print('Verifying probability distribution...')
                 # After performing a command, check the probability
                 self.assertAlmostEqual(sum(model.probabilities), 1.0)
-                self.assertTrue(all(c in model.chars for c in lang))
-                print('PMF was valid')
+                self.assertTrue(set(lang).issubset(model.chars))
         with io.open(os.path.join(TEST_CMD_DIR, 'basic_output'), 'r') as fd:
             expected = fd.read()
         out.seek(0)
@@ -57,12 +52,16 @@ class TestModels(unittest.TestCase):
         # Generate a single character
         # Note: we loop here such that if we generate a ^C as our first character,
         # we still test this functionality
-        while len(model.history) == 0:
-            model.generate()
-        while len(model.history) > 0:
-            model.generate()
-            if len(model.history) > MAX_EXPECTED_LENGTH:
-                self.fail('Failed to generate sentence ending before %d characters' % (MAX_EXPECTED_LENGTH,))
+        sentence = ''
+        try:
+            while len(model.history) == 0:
+                sentence += model.generate()
+            while len(model.history) > 0:
+                sentence += model.generate()
+                if len(model.history) > MAX_EXPECTED_LENGTH:
+                    self.fail('Failed to generate sentence ending before %d characters' % (MAX_EXPECTED_LENGTH,))
+        finally:
+            print('Sentence generated: ' + sentence)
 
     def test_ngram_basic(self):
         with tempfile.TemporaryFile(mode='w+', encoding='utf-8') as tmp:
@@ -71,10 +70,10 @@ class TestModels(unittest.TestCase):
             self.basic_helper(model, tmp)
 
     def test_ngram_termination(self):
-        model = Ngram(5, seed=int(SEED), smoothing=0.01)
-        model.train(utils.loader.get_language(), utils.loader.load_all(TEST_DATA_DIR))
-        self.termination_helper(model)
-
+        with tempfile.TemporaryFile(mode='w+', encoding='utf-8') as tmp:
+            model = Ngram(5, seed=int(SEED), smoothing=1e-10, out=tmp)
+            model.train(utils.loader.get_language(), utils.loader.load_all(TEST_DATA_DIR))
+            self.termination_helper(model)
 
 if __name__ == '__main__':
     unittest.main()

@@ -116,6 +116,7 @@ class Ngram(Model):
         sampled = np.random.choice(self.chars, p=self.probabilities)
         print(sampled + ' generated (probability=%f). ' % (self.probabilities[self.chars.index(sampled)],), end='', file=self.out)
         self.observe(sampled)
+        return sampled
 
     """Observe character "observed" and update history, returns the log probability of that character"""
     def observe(self, observed):

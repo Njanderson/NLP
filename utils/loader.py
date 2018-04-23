@@ -1,7 +1,6 @@
 import io
 from os import listdir, path
-from utils.const import LANG_SIZE, LANG_MAX_VALUE
-import numpy as np
+from utils.const import LANG_MAX_VALUE
 
 def get_language():
     lang = []
