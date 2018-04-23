@@ -75,15 +75,15 @@ class Ngram(Model):
         self.language = language
 
         # Used to print training progress
-        count = 0
-        log_freq = 100
+        # count = 0
+        # log_freq = 100
 
         for sentence in data:
             # Print progress
-            if count % log_freq == 0:
-                print('Trained on %d out of %d samples' % (count, len(data)))
-                pass
-            count += 1
+            # if count % log_freq == 0:
+            #     print('Trained on %d out of %d samples' % (count, len(data)))
+            #     pass
+            # count += 1
 
             # Add ^C character
             sample = sentence + chr(3)
@@ -143,5 +143,5 @@ class Ngram(Model):
 
     """Resets the history of the model"""
     def reset(self):
-        history = ''
+        self.history = ''
         self._create_dist()

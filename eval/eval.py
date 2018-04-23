@@ -36,6 +36,8 @@ if __name__ == '__main__':
         perplexity_total = 0.0
 
         for sample in test_samples:
+            # Add ending char
+            sample += chr(3)
             log_p_sum = 0.0
             for c in sample:
                 # Observe returns the log_2(probability) that char c was observed

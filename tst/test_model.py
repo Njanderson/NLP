@@ -46,7 +46,6 @@ class TestModels(unittest.TestCase):
         self.output_helper(expected, found)
 
     """Evaluates whether a stop character is eventually produced"""
-
     def termination_helper(self, model):
         # Generate a single character
         # Note: we loop here such that if we generate a ^C as our first character,
