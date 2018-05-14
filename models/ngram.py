@@ -3,17 +3,18 @@ import numpy as np
 from math import log
 from logging import Logger, getLogger, INFO
 import sys
+from utils.loader import read_bson, write_bson
 
 logger = getLogger('Ngram')
 Logger.setLevel(logger, INFO)
 
 class Ngram(Model):
 
-    def __init__(self, n, seed=1, smoothing=1, out=sys.stdout):
+    def __init__(self, n, language, seed=1, smoothing=1, out=sys.stdout, counts={}):
         # The counts of all ngrams seem
-        self.counts = {}
-        # All of the characters in the language
-        self.language = []
+        self.counts = counts
+        # Save language
+        self.language = language
         # The next possible chars and their probabilities
         self.chars = []
         self.probabilities = []
@@ -29,6 +30,9 @@ class Ngram(Model):
         np.random.seed(seed)
         # For testing, collect output
         self.out = out
+        # Only leave the distribution null if we have to train our model
+        if len(counts) > 0:
+            self._create_dist()
 
     """
     Given a map of history to next character counts, construct a
@@ -70,10 +74,8 @@ class Ngram(Model):
         logger.info('Created new distribution')
 
     """Train the model. Accepts data, a list of sentences to train on"""
-    def train(self, language, data):
+    def train(self, data):
         logger.info('Training model...')
-        self.language = language
-
         # Used to print training progress
         # count = 0
         # log_freq = 100
@@ -109,6 +111,10 @@ class Ngram(Model):
                     curr = curr[1:] if len(curr) > 0 else None
 
                 history += c
+
+        # Once all samples in the data have been parsed, write bson to disk
+        write_bson(self.counts, type(self).__name__)
+
         logger.info('Trained model!')
         self._create_dist()
 

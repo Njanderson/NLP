@@ -1,7 +1,7 @@
 class Model(object):
 
     """Train the model. Accepts data, a list of sentences to train on"""
-    def train(self, language, data):
+    def train(self, language, data, load_from_bson=True, save=False):
         raise NotImplementedError()
 
     """Generate a character the model"""
